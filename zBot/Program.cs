@@ -16,7 +16,7 @@ namespace zBot
     class Program
     {
         private DiscordSocketClient _client;
-        private string _token = File.ReadAllText(@"D:\Repos\Projects\DBot\DBot\token.txt");
+        private string _token = File.ReadAllText(@"D:\Repos\Projects\zBot\zBot\token.txt");
         private string _clientId = File.ReadAllText(@"D:\Repos\Projects\zBot\zBot\twitchclientid.txt");
         private const string _apiLink = "https://api.twitch.tv/kraken/streams/";
 
