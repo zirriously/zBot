@@ -261,3 +261,4 @@ __pycache__/
 *.pyc
 /zBot/token.txt
 /zBot/users.txt
+/zBot/twitchclientid.txt
