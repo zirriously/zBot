@@ -52,13 +52,26 @@ namespace zBot
             {
                 StreamingGame streamingGame = (StreamingGame) after.Activity;
                 string twitchUsername = streamingGame.Url.Substring(streamingGame.Url.LastIndexOf('/') + 1);
-                string apiReq = _apiLink + twitchUsername + "?Client-ID=" + _clientId;
+                string apiReq = _apiLink + twitchUsername;
                 Console.WriteLine(apiReq);
-
+                await TwitchRequest(apiReq);
 
                 Console.WriteLine($"User updated | {after.Username} | {after.Activity.Type.ToString()}");
                 Console.WriteLine($"Fetching from {streamingGame.Url}");
             }
+        }
+
+        private Task TwitchRequest(string url)
+        {
+            HttpWebRequest req = (HttpWebRequest) WebRequest.Create(url);
+            req.Method = "Get";
+            req.Headers.Add("Client-ID", _clientId);
+
+            HttpWebResponse webResponse = (HttpWebResponse) req.GetResponse();
+            StreamReader sr = new StreamReader(webResponse.GetResponseStream());
+            string strResponse = sr.ReadToEnd();
+            Console.WriteLine(strResponse);
+            return Task.CompletedTask;
         }
 
         private Task Log(LogMessage message)
