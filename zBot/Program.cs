@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,7 +28,7 @@ namespace zBot
 
         public async Task MainAsync()
         {
-            _client = new DiscordSocketClient(new DiscordSocketConfig() { LogLevel = LogSeverity.Info, MessageCacheSize = 100});
+            _client = new DiscordSocketClient(new DiscordSocketConfig() { LogLevel = LogSeverity.Verbose, MessageCacheSize = 100});
             _client.Log += Log;
 
             await _client.LoginAsync(TokenType.Bot, _token);
@@ -53,6 +54,15 @@ namespace zBot
                 return Task.CompletedTask;
             };
 
+            Console.WriteLine("Manually checking users for stream status...");
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            await RefreshUsers();
+            sw.Stop();
+            Console.WriteLine($"Done. {sw.ElapsedMilliseconds} ms elapsed. ");
+
+            RefreshUsersTimer();
+
             await Task.Delay(-1);
         }
 
@@ -60,7 +70,7 @@ namespace zBot
         {
             if (after.Activity != null)
             {
-                if (after.Activity.Type == ActivityType.Streaming && !_optOutList.Contains(after.Id.ToString()))
+                if (after.Activity.Type == ActivityType.Streaming && !_optOutList.Contains(after.Id.ToString()) && !after.Roles.Contains(liveRole))
                 {
                     await UpdateUser(after);
                 }
@@ -98,7 +108,41 @@ namespace zBot
 
         private async Task RefreshUsers()
         {
+            foreach (var guild in _client.Guilds)
+            {
+                foreach (var user in guild.Users)
+                {
+                    if (user.Activity != null)
+                    {
+                        if (user.Activity.Type == ActivityType.Streaming && !_optOutList.Contains(user.Id.ToString()) && !user.Roles.Contains(liveRole))
+                        {
+                            await UpdateUser(user);
+                        }
+                    }
+                    else if (user.Roles.Contains(liveRole))
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"{user.Username} is no longer streaming. Removing role");
+                        await user.RemoveRoleAsync(liveRole);
+                        Console.WriteLine("Succesfully removed role");
+                        Console.ResetColor();
+                    }
+                }
+            }
+        }
 
+        private void RefreshUsersTimer()
+        {
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    await Task.Delay(20000);
+                    Console.WriteLine("Manually refreshing users...");
+                    await RefreshUsers();
+                    Console.WriteLine("Finished. Sleeping for 20 seconds...");
+                }
+            });
         }
 
         private async Task MessageReceived(SocketMessage msg)
