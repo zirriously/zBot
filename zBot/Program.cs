@@ -28,7 +28,7 @@ namespace zBot
 
         public async Task MainAsync()
         {
-            _client = new DiscordSocketClient(new DiscordSocketConfig() { LogLevel = LogSeverity.Verbose, MessageCacheSize = 100});
+            _client = new DiscordSocketClient(new DiscordSocketConfig() { LogLevel = LogSeverity.Info, MessageCacheSize = 100});
             _client.Log += Log;
 
             await _client.LoginAsync(TokenType.Bot, _token);
@@ -70,7 +70,7 @@ namespace zBot
         {
             if (after.Activity != null)
             {
-                if (after.Activity.Type == ActivityType.Streaming && !_optOutList.Contains(after.Id.ToString()) && !after.Roles.Contains(liveRole))
+                if (after.Activity.Type == ActivityType.Streaming && !_optOutList.Contains(after.Id.ToString()))
                 {
                     await UpdateUser(after);
                 }
@@ -114,7 +114,7 @@ namespace zBot
                 {
                     if (user.Activity != null)
                     {
-                        if (user.Activity.Type == ActivityType.Streaming && !_optOutList.Contains(user.Id.ToString()) && !user.Roles.Contains(liveRole))
+                        if (user.Activity.Type == ActivityType.Streaming && !_optOutList.Contains(user.Id.ToString()))
                         {
                             await UpdateUser(user);
                         }
@@ -137,10 +137,12 @@ namespace zBot
             {
                 while (true)
                 {
-                    await Task.Delay(20000);
+                    await Task.Delay(62000);
+                    Console.ForegroundColor = ConsoleColor.Blue;
                     Console.WriteLine("Manually refreshing users...");
-                    await RefreshUsers();
+                    RefreshUsers();
                     Console.WriteLine("Finished. Sleeping for 20 seconds...");
+                    Console.ResetColor();
                 }
             });
         }
