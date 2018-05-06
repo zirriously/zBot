@@ -17,8 +17,9 @@ namespace zBot
     class Program
     {
         private DiscordSocketClient _client;
-        private string _token = File.ReadAllText(@"D:\Repos\Projects\zBot\zBot\token.txt");
-        private string _clientId = File.ReadAllText(@"D:\Repos\Projects\zBot\zBot\twitchclientid.txt");
+        private string _token = File.ReadAllText(@"..\..\token.txt");
+        private string _clientId = File.ReadAllText(@"..\..\twitchclientid.txt");
+        private List<string> _optOutList = File.ReadAllLines(@"..\..\users.txt").ToList();
         private const string _apiLink = "https://api.twitch.tv/kraken/streams/";
         private IRole liveRole;
 
@@ -34,6 +35,7 @@ namespace zBot
 
 
             _client.GuildMemberUpdated += GuildMemberUpdated;
+            _client.MessageReceived += MessageReceived;
             _client.Ready += () =>
             {
                 int n = 0;
@@ -47,7 +49,6 @@ namespace zBot
                 {
                     foreach (var role in guild.Roles)
                     {
-                        Console.WriteLine(role);
                         if (role.Name == "Live")
                             liveRole = role;
                     }
@@ -60,24 +61,72 @@ namespace zBot
 
         private async Task GuildMemberUpdated(SocketGuildUser before, SocketGuildUser after)
         {
-            if (after.Activity.Type == ActivityType.Streaming)
+            if (after.Activity != null)
             {
-                StreamingGame streamingGame = (StreamingGame) after.Activity;
-                string twitchUsername = streamingGame.Url.Substring(streamingGame.Url.LastIndexOf('/') + 1);
-                string apiReq = _apiLink + twitchUsername;
-                string response = await TwitchRequest(apiReq);
-
-                dynamic dResp = JsonConvert.DeserializeObject<dynamic>(response);
-                string game = dResp.stream.game;
-                Console.WriteLine($"{after.Username} is now streaming {game}");
-
-                if (game == "Factorio")
+                if (after.Activity.Type == ActivityType.Streaming && !_optOutList.Contains(after.Id.ToString()))
                 {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine($"Giving role to {after.Username}");
-                    await after.AddRoleAsync(liveRole);
-                    Console.WriteLine("Succesfully added role.");
-                    Console.ResetColor();
+                    StreamingGame streamingGame = (StreamingGame) after.Activity;
+                    string twitchUsername = streamingGame.Url.Substring(streamingGame.Url.LastIndexOf('/') + 1);
+                    string apiReq = _apiLink + twitchUsername;
+                    string response = await TwitchRequest(apiReq);
+
+                    dynamic dResp = JsonConvert.DeserializeObject<dynamic>(response);
+                    string game = dResp.stream.game;
+                    Console.WriteLine($"{after.Username} is now streaming {game}");
+
+                    if (game == "Factorio")
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine($"Giving role to {after.Username}");
+                        await after.AddRoleAsync(liveRole);
+                        Console.WriteLine("Succesfully added role");
+                        Console.ResetColor();
+                    }
+                }
+            }
+            else if (after.Roles.Contains(liveRole))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"{after.Username} is no longer streaming. Removing role");
+                await after.RemoveRoleAsync(liveRole);
+                Console.WriteLine("Succesfully removed role");
+                Console.ResetColor();
+            }
+        }
+
+        private async Task MessageReceived(SocketMessage msg)
+        {
+            if (msg.Channel.Name == "bot-stuff")
+            {
+                if (msg.Content.ToLower() == "..optout")
+                {
+                    if (!_optOutList.Contains(msg.Author.Id.ToString()))
+                    {
+                        _optOutList.Add(msg.Author.Id.ToString());
+                        File.WriteAllLines(@"..\..\users.txt", _optOutList);
+                        Console.WriteLine($"{msg.Author.Username} has opted out");
+                        await msg.Channel.SendMessageAsync($"{msg.Author.Username} has opted out.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{msg.Author.Username} already opted out");
+                        await msg.Channel.SendMessageAsync($"Error - {msg.Author.Username} is already opted out.");
+                    }
+                }
+                else if (msg.Content.ToLower() == "..optin")
+                {
+                    if (_optOutList.Contains(msg.Author.Id.ToString()))
+                    {
+                        _optOutList.Remove(msg.Author.Id.ToString());
+                        File.WriteAllLines(@"..\..\users.txt", _optOutList);
+                        Console.WriteLine($"{msg.Author.Username} has opted in");
+                        await msg.Channel.SendMessageAsync($"{msg.Author.Username} has opted in.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{msg.Author.Username} already opted in");
+                        await msg.Channel.SendMessageAsync($"Error - {msg.Author.Username} is already opted in.");
+                    }
                 }
             }
         }
