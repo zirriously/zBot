@@ -20,12 +20,13 @@ namespace zBot
         private string _token = File.ReadAllText(@"D:\Repos\Projects\zBot\zBot\token.txt");
         private string _clientId = File.ReadAllText(@"D:\Repos\Projects\zBot\zBot\twitchclientid.txt");
         private const string _apiLink = "https://api.twitch.tv/kraken/streams/";
+        private IRole liveRole;
 
         static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
 
         public async Task MainAsync()
         {
-            _client = new DiscordSocketClient(new DiscordSocketConfig() { LogLevel = LogSeverity.Info, MessageCacheSize = 100});
+            _client = new DiscordSocketClient(new DiscordSocketConfig() { LogLevel = LogSeverity.Debug, MessageCacheSize = 100});
             _client.Log += Log;
 
             await _client.LoginAsync(TokenType.Bot, _token);
@@ -41,6 +42,16 @@ namespace zBot
                     n += guild.Users.Count;
                 }
                 Console.WriteLine($"{_client.CurrentUser.Username} is connected to {_client.Guilds.Count} guild, serving a total of {n} users. ");
+
+                foreach (var guild in _client.Guilds)
+                {
+                    foreach (var role in guild.Roles)
+                    {
+                        Console.WriteLine(role);
+                        if (role.Name == "Live")
+                            liveRole = role;
+                    }
+                }
                 return Task.CompletedTask;
             };
 
@@ -64,6 +75,8 @@ namespace zBot
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine($"Giving role to {after.Username}");
+                    await after.AddRoleAsync(liveRole);
+                    Console.WriteLine("Succesfully added role.");
                     Console.ResetColor();
                 }
             }
