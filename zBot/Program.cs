@@ -62,23 +62,7 @@ namespace zBot
             {
                 if (after.Activity.Type == ActivityType.Streaming && !_optOutList.Contains(after.Id.ToString()))
                 {
-                    var streamingGame = (StreamingGame) after.Activity;
-                    var twitchUsername = streamingGame.Url.Substring(streamingGame.Url.LastIndexOf('/') + 1);
-                    var apiReq = _apiLink + twitchUsername;
-                    var response = await TwitchRequest(apiReq);
-
-                    var dResp = JsonConvert.DeserializeObject<dynamic>(response);
-                    string game = dResp.stream.game;
-                    Console.WriteLine($"{after.Username} is now streaming {game}");
-
-                    if (game == "Factorio")
-                    {
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine($"Giving role to {after.Username}");
-                        await after.AddRoleAsync(liveRole);
-                        Console.WriteLine("Succesfully added role");
-                        Console.ResetColor();
-                    }
+                    await UpdateUser(after);
                 }
             }
             else if (after.Roles.Contains(liveRole))
@@ -89,6 +73,32 @@ namespace zBot
                 Console.WriteLine("Succesfully removed role");
                 Console.ResetColor();
             }
+        }
+
+        private async Task UpdateUser(SocketGuildUser user)
+        {
+            var streamingGame = (StreamingGame)user.Activity;
+            var twitchUsername = streamingGame.Url.Substring(streamingGame.Url.LastIndexOf('/') + 1);
+            var apiReq = _apiLink + twitchUsername;
+            var response = await TwitchRequest(apiReq);
+
+            var dResp = JsonConvert.DeserializeObject<dynamic>(response);
+            string game = dResp.stream.game;
+            Console.WriteLine($"{user.Username} is now streaming {game}");
+
+            if (game == "Factorio")
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"Giving role to {user.Username}");
+                await user.AddRoleAsync(liveRole);
+                Console.WriteLine("Succesfully added role");
+                Console.ResetColor();
+            }
+        }
+
+        private async Task RefreshUsers()
+        {
+
         }
 
         private async Task MessageReceived(SocketMessage msg)
