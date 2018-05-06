@@ -18,9 +18,9 @@ namespace zBot
     class Program
     {
         private DiscordSocketClient _client;
-        private string _token = File.ReadAllText(@"..\..\token.txt");
-        private string _clientId = File.ReadAllText(@"..\..\twitchclientid.txt");
-        private List<string> _optOutList = File.ReadAllLines(@"..\..\users.txt").ToList();
+        private string _token = File.ReadAllText(@".\token.txt");
+        private string _clientId = File.ReadAllText(@".\twitchclientid.txt");
+        private List<string> _optOutList = File.ReadAllLines(@".\users.txt").ToList();
         private const string _apiLink = "https://api.twitch.tv/kraken/streams/";
         private IRole liveRole;
 
