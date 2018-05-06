@@ -38,13 +38,9 @@ namespace zBot
             _client.MessageReceived += MessageReceived;
             _client.Ready += () =>
             {
-                int n = 0;
-                foreach (var guild in _client.Guilds)
-                {
-                    n += guild.Users.Count;
-                }
+                int n = _client.Guilds.Sum(guild => guild.Users.Count);
                 Console.WriteLine($"{_client.CurrentUser.Username} is connected to {_client.Guilds.Count} guild, serving a total of {n} users. ");
-                Console.WriteLine($"A total of {_optOutList.Count} are opted out.");
+                Console.WriteLine($"A total of {_optOutList.Count} users are opted out.");
 
                 foreach (var guild in _client.Guilds)
                 {
@@ -66,12 +62,12 @@ namespace zBot
             {
                 if (after.Activity.Type == ActivityType.Streaming && !_optOutList.Contains(after.Id.ToString()))
                 {
-                    StreamingGame streamingGame = (StreamingGame) after.Activity;
-                    string twitchUsername = streamingGame.Url.Substring(streamingGame.Url.LastIndexOf('/') + 1);
-                    string apiReq = _apiLink + twitchUsername;
-                    string response = await TwitchRequest(apiReq);
+                    var streamingGame = (StreamingGame) after.Activity;
+                    var twitchUsername = streamingGame.Url.Substring(streamingGame.Url.LastIndexOf('/') + 1);
+                    var apiReq = _apiLink + twitchUsername;
+                    var response = await TwitchRequest(apiReq);
 
-                    dynamic dResp = JsonConvert.DeserializeObject<dynamic>(response);
+                    var dResp = JsonConvert.DeserializeObject<dynamic>(response);
                     string game = dResp.stream.game;
                     Console.WriteLine($"{after.Username} is now streaming {game}");
 
