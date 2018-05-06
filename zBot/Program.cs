@@ -10,6 +10,7 @@ using Discord.WebSocket;
 using Discord.Audio;
 using Discord.Audio.Streams;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace zBot
 {
@@ -53,15 +54,22 @@ namespace zBot
                 StreamingGame streamingGame = (StreamingGame) after.Activity;
                 string twitchUsername = streamingGame.Url.Substring(streamingGame.Url.LastIndexOf('/') + 1);
                 string apiReq = _apiLink + twitchUsername;
-                Console.WriteLine(apiReq);
-                await TwitchRequest(apiReq);
+                string response = await TwitchRequest(apiReq);
 
-                Console.WriteLine($"User updated | {after.Username} | {after.Activity.Type.ToString()}");
-                Console.WriteLine($"Fetching from {streamingGame.Url}");
+                dynamic dResp = JsonConvert.DeserializeObject<dynamic>(response);
+                string game = dResp.stream.game;
+                Console.WriteLine($"{after.Username} is now streaming {game}");
+
+                if (game == "Factorio")
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"Giving role to {after.Username}");
+                    Console.ResetColor();
+                }
             }
         }
 
-        private Task TwitchRequest(string url)
+        private Task<string> TwitchRequest(string url)
         {
             HttpWebRequest req = (HttpWebRequest) WebRequest.Create(url);
             req.Method = "Get";
@@ -70,8 +78,8 @@ namespace zBot
             HttpWebResponse webResponse = (HttpWebResponse) req.GetResponse();
             StreamReader sr = new StreamReader(webResponse.GetResponseStream());
             string strResponse = sr.ReadToEnd();
-            Console.WriteLine(strResponse);
-            return Task.CompletedTask;
+
+            return Task.FromResult(strResponse);
         }
 
         private Task Log(LogMessage message)
