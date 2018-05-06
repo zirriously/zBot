@@ -27,7 +27,7 @@ namespace zBot
 
         public async Task MainAsync()
         {
-            _client = new DiscordSocketClient(new DiscordSocketConfig() { LogLevel = LogSeverity.Debug, MessageCacheSize = 100});
+            _client = new DiscordSocketClient(new DiscordSocketConfig() { LogLevel = LogSeverity.Info, MessageCacheSize = 100});
             _client.Log += Log;
 
             await _client.LoginAsync(TokenType.Bot, _token);
@@ -44,6 +44,7 @@ namespace zBot
                     n += guild.Users.Count;
                 }
                 Console.WriteLine($"{_client.CurrentUser.Username} is connected to {_client.Guilds.Count} guild, serving a total of {n} users. ");
+                Console.WriteLine($"A total of {_optOutList.Count} are opted out.");
 
                 foreach (var guild in _client.Guilds)
                 {
